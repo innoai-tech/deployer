@@ -2,6 +2,7 @@ package kubepkg
 
 import (
 	"path"
+	"strings"
 
 	"piper.octohelm.tech/file"
 	"piper.octohelm.tech/wd"
@@ -12,29 +13,33 @@ import (
 	remote!:      wd.#WorkDir
 	kubepkgFile!: file.#File
 
+	_info: wd.#SysInfo & {
+		cwd: remote
+	}
+
 	targetDir: string | *"/data/airgaps"
 
 	_sync_oci_tar: file.#Sync & {
 		srcFile: file.#File & {
 			wd:       kubepkgFile.wd
-			filename: "\(kubepkgFile.filename).tar"
+			filename: strings.Replace(kubepkgFile.filename, ".kubepkg.json", ".\(_info.platform.arch).tar", 1)
 		}
 
 		outFile: {
 			wd: remote
-			filename: path.Join(["\(targetDir)", "\(path.Base(kubepkgFile.filename)).tar"])
+			filename: path.Join(["\(targetDir)", "\(path.Base(srcFile.filename))"])
 		}
 	}
 
 	_sync_manifests_yaml: file.#Sync & {
 		srcFile: file.#File & {
 			wd:       kubepkgFile.wd
-			filename: "\(kubepkgFile.filename).yaml"
+			filename: strings.Replace(kubepkgFile.filename, ".kubepkg.json", ".yaml", 1)
 		}
 
 		outFile: {
 			wd: remote
-			filename: path.Join(["\(targetDir)", "\(path.Base(kubepkgFile.filename)).yaml"])
+			filename: path.Join(["\(targetDir)", "\(path.Base(srcFile.filename))"])
 		}
 	}
 

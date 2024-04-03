@@ -1,6 +1,8 @@
 package kubepkg
 
 import (
+	"strings"
+
 	"piper.octohelm.tech/client"
 	"piper.octohelm.tech/file"
 	"piper.octohelm.tech/wd"
@@ -9,6 +11,8 @@ import (
 #Airgap: {
 	kubepkgFile!: file.#File
 	platform!:    string
+
+	_arch: strings.Split(platform, "/")[1]
 
 	_env: client.#Env & {
 		KUBEPKG_REMOTE_REGISTRY_ENDPOINT!: string
@@ -29,14 +33,17 @@ import (
 		targetDir: _tmp.dir
 	}
 
+	_tar_filename: strings.Replace(kubepkgFile.filename, ".kubepkg.json", ".\(_arch).tar", 1)
+	_yaml_filename: strings.Replace(kubepkgFile.filename, ".kubepkg.json", ".yaml", 1)
+
 	_exec: #Exec & {
 		"cwd": kubepkgFile.wd
 		"args": [
 			"export",
 			"--platform=\(platform)",
 			"--storage-root=\(_rel.path)",
-			"--output-oci=./\(kubepkgFile.filename).tar",
-			"--output-manifests=./\(kubepkgFile.filename).yaml",
+			"--output-oci=./\(_tar_filename)",
+			"--output-manifests=./\(_yaml_filename)",
 			"./\(kubepkgFile.filename)",
 		]
 	}

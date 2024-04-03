@@ -3,6 +3,7 @@ package tool
 import (
 	"piper.octohelm.tech/wd"
 	"piper.octohelm.tech/file"
+	"piper.octohelm.tech/client"
 
 	kubepkgspec "github.com/octohelm/kubepkg/cuepkg/kubepkg"
 	"github.com/innoai-tech/deployer/cuedevpkg/kubepkg"
