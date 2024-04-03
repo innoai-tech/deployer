@@ -2,10 +2,12 @@ package helm
 
 import (
 	"list"
+	"path"
 	"encoding/yaml"
 
 	"piper.octohelm.tech/client"
 	"piper.octohelm.tech/wd"
+	"piper.octohelm.tech/http"
 	"piper.octohelm.tech/file"
 
 	kubepkgspec "github.com/octohelm/kubepkg/cuepkg/kubepkg"
@@ -24,9 +26,9 @@ import (
 		name!:   string
 		version: string | *"1.0.0"
 		dependencies: [Name=string]: {
-			name?:       string
-			version!:    string
+			name:        Name
 			repository!: string
+			version!:    string
 		}
 	}
 
@@ -41,12 +43,52 @@ import (
 		id: "helm-charts/\(chart.name)@\(chart.version)"
 	}
 
+	_dep_charts: client.#Group & {
+		for name, d in chart.dependencies {
+			"\(name)": {
+				_index: http.#Fetch & {
+					url:   "\(d.repository)/index.yaml"
+					hitBy: "Etag"
+				}
+
+				_read: file.#ReadFromYAML & {
+					file: _index.file
+				}
+				// helm index struture
+				// entries:
+				//   <name>:
+				//     version: <version>
+				//     urls: [] 
+				_matched: [
+						for release in _read.data.entries[name] if release.version == d.version {
+						release.urls[0]
+					},
+				][0]
+
+				_tgz: http.#Fetch & {
+					url:   _matched
+					hitBy: "Etag"
+				}
+
+				_write: file.#Sync & {
+					srcFile: _tgz.file
+					outFile: {
+						wd:       _tmp.dir
+						filename: "charts/\(path.Base(_tgz.url))"
+					}
+				}
+			}
+		}
+	}
+
 	preConvert: [...#Step]
 
 	exclude: [...string] | *[]
 
 	manifests: {
 		_write_chart_yaml: file.#WriteAsYAML & {
+			$dep: _dep_charts.$ok
+
 			outFile: {
 				wd:       _tmp.dir
 				filename: "Chart.yaml"
@@ -55,21 +97,6 @@ import (
 				apiVersion: "v2"
 				name:       chart.name
 				version:    chart.version
-				dependencies: [
-					for n, d in chart.dependencies {
-						{
-							name: [
-								if (d.name != _|_) {
-									d.name
-								},
-								n,
-							][0]
-							version:    d.version
-							repository: d.repository
-							alias:      n
-						}
-					},
-				]
 			}
 		}
 
@@ -84,30 +111,10 @@ import (
 			data: values
 		}
 
-		_add_repo: client.#Group & {
-			for name, dep in chart.dependencies {
-				_dep: "\(dep.repository)": #Exec & {
-					cwd: _tmp.dir
-					args: [
-						"repo", "add", name, dep.repository,
-					]
-				}
-			}
-		}
-
-		_dep: #Exec & {
-			$dep: _add_repo.$ok && _write_values_yaml.$ok
-
-			cwd: _tmp.dir
-			args: [
-				"dependency", "build",
-			]
-		}
-
 		_manifest_file: "manifests.yaml"
 
 		_build: #Exec & {
-			$dep:  _dep.$ok
+			$dep:  _write_values_yaml.$ok
 			"cwd": _tmp.dir
 			"args": [
 				"template --namespace=\(namespace) \(chart.name) . > \(_manifest_file)",
