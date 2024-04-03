@@ -8,9 +8,9 @@ import (
 
 #Airgap: {
 	kubepkgFile!: file.#File
+	platform!:    string
 
 	_env: client.#Env & {
-		TARGET_PLATFORM!:                  string
 		KUBEPKG_REMOTE_REGISTRY_ENDPOINT!: string
 		KUBEPKG_REMOTE_REGISTRY_USERNAME!: string
 		KUBEPKG_REMOTE_REGISTRY_PASSWORD!: client.#Secret
@@ -33,7 +33,7 @@ import (
 		"cwd": kubepkgFile.wd
 		"args": [
 			"export",
-			"--platform=\(_env.TARGET_PLATFORM)",
+			"--platform=\(platform)",
 			"--storage-root=\(_rel.path)",
 			"--output-oci=./\(kubepkgFile.filename).tar",
 			"--output-manifests=./\(kubepkgFile.filename).yaml",

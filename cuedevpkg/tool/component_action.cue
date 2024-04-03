@@ -9,7 +9,7 @@ import (
 )
 
 #ComponentAction: {
-	cwd!:   wd.#WorkDir
+	cwd!: wd.#WorkDir
 	// 使用 deploy 时需要指定
 	remote: wd.#WorkDir
 
@@ -35,10 +35,15 @@ import (
 		}
 	}
 
+	_env: client.#Env & {
+		TARGET_PLATFORM!: string
+	}
+
 	// 导出对应 airgap tar 包 和 yaml
 	airgap: {
 		for group, _components in component for name, _ in _components {
 			"\(group)": "\(name)": kubepkg.#Airgap & {
+				"platform":    _env.TARGET_PLATFORM
 				"kubepkgFile": export["\(group)"]["\(name)"].file
 			}
 		}
