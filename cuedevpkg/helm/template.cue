@@ -84,12 +84,23 @@ import (
 			data: values
 		}
 
+		_add_repo: client.#Group & {
+			for name, dep in chart.dependencies {
+				_dep: "\(dep.repository)": #Exec & {
+					cwd: _tmp.dir
+					args: [
+						"repo", "add", name, dep.repository,
+					]
+				}
+			}
+		}
+
 		_dep: #Exec & {
-			$dep: _write_values_yaml.$ok
+			$dep: _add_repo.$ok && _write_values_yaml.$ok
 
 			cwd: _tmp.dir
 			args: [
-				"dependency", "update",
+				"dependency", "build",
 			]
 		}
 
