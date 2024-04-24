@@ -117,7 +117,7 @@ import (
 			$dep:  _write_values_yaml.$ok
 			"cwd": _tmp.dir
 			"args": [
-				"template --namespace=\(namespace) \(chart.name) . > \(_manifest_file)",
+				"template --namespace=\(namespace) --include-crds \(chart.name) . > \(_manifest_file)",
 			]
 		}
 
