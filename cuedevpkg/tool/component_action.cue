@@ -3,7 +3,6 @@ package tool
 import (
 	"piper.octohelm.tech/wd"
 	"piper.octohelm.tech/file"
-	"piper.octohelm.tech/client"
 
 	kubepkgspec "github.com/octohelm/kubepkg/cuepkg/kubepkg"
 	"github.com/innoai-tech/deployer/cuedevpkg/kubepkg"
@@ -11,6 +10,8 @@ import (
 
 #ComponentAction: {
 	cwd!: wd.#WorkDir
+	// 目标架构
+	platform!: string
 	// 使用 deploy 时需要指定
 	remote: wd.#WorkDir
 
@@ -36,15 +37,11 @@ import (
 		}
 	}
 
-	_env: client.#Env & {
-		TARGET_PLATFORM!: string
-	}
-
 	// 导出对应 airgap tar 包 和 yaml
 	airgap: {
 		for group, _components in component for name, _ in _components {
 			"\(group)": "\(name)": kubepkg.#Airgap & {
-				"platform":    _env.TARGET_PLATFORM
+				"platform":    platform
 				"kubepkgFile": export["\(group)"]["\(name)"].file
 			}
 		}
