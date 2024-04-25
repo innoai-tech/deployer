@@ -10,6 +10,8 @@ import (
 
 #ComponentAction: {
 	cwd!: wd.#WorkDir
+ 	// 集群名称
+	clusterName!: string
 	// 目标架构
 	platform!: string
 	// 使用 deploy 时需要指定
@@ -28,7 +30,7 @@ import (
 			"\(group)": "\(name)": file.#WriteAsJSON & {
 				"outFile": {
 					"wd":       cwd
-					"filename": "target/\(group)/\(name).kubepkg.json"
+					"filename": "target/\(clusterName)/\(group)/\(name).kubepkg.json"
 				}
 				"data": {
 					c.output
